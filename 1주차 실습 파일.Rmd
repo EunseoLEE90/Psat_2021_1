@@ -1,0 +1,548 @@
+---
+title: "1주차 실습"
+author: "Eunseo Lee"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+---
+title: "R Notebook"
+output:
+  word_document: default
+  pdf_document: default
+  html_notebook: default
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+```{r}
+r = getOption("repos")
+r["CRAN"] = "http://cran.us.r-project.org"
+options(repos = r)
+install.packages('plyr')
+install.packages('tidyverse')
+install.packages('data.table')
+library('plyr')
+library('tidyverse')
+library('data.table')
+setwd("C:/Users/user/Downloads/1주차패키지")
+getwd()
+df=read.csv("data.csv", header=TRUE)
+df
+
+```
+
+
+#1 데이터 확인하기. str으로 데이터의 구성을 살펴보고, 각 열마다 NA 개수와 unique 값 및 개수를 확인해 보세요
+```{r}
+str(df)
+
+```
+```{r}
+print(length(df$patient_id))
+print(sum(is.na(df$patient_id)))
+print(unique(df$patient_id))
+print(length(unique(df$patient_id)))
+print(summary(df$patient_id))
+```
+
+```{r}
+print(length(df$sex))
+print(sum(is.na(df$sex)))
+print(unique(df$sex))
+print(length(unique(df$sex)))
+summary(df$sex)
+
+```
+
+
+```{r}
+
+print(sum(is.na(df$age)))
+print(length(unique(df$age)))
+summary(df$age)
+
+
+```
+
+```{r}
+
+print(sum(is.na(df$country)))
+#print(unique(df$country))
+print(length(unique(df$country)))
+print(summary(df$country))
+```
+
+```{r}
+
+print(sum(is.na(df$province)))
+print(length(unique(df$province)))
+print(summary(df$province))
+
+
+```
+
+```{r}
+
+print(sum(is.na(df$city)))
+print(length(unique(df$city)))
+print(summary(df$city))
+
+
+```
+
+```{r}
+
+print(sum(is.na(df$confirmed_date)))
+print(length(unique(df$confirmed_date)))
+print(summary(df$confirmed_date))
+
+
+```
+
+```{r}
+
+print(sum(is.na(df$state)))
+print(length(unique(df$state)))
+print(summary(df$state))
+
+
+```
+
+#2-1. NA가 있는 행을 삭제하세요.
+```{r}
+df<-na.omit(df)
+df
+```
+
+#문제 2-2 빈 문자열(“”)이 있는 행을 삭제하고, 각 열마다 NA 개수와 unique 값 및 개수를 다시 확인해 보세요.(which, 논리연산자 이용 시 편리)
+
+```{r}
+df <- df[!(df$patient_id == "" ), ]
+df <- df[!(df$sex == "" ), ]
+df <- df[!(df$age == "" ), ]
+df <- df[!(df$country == "" ), ]
+df <- df[!(df$province == "" ), ]
+df <- df[!(df$city == "" ), ]
+df <- df[!(df$confirmed_date== "" ), ]
+df <- df[!(df$state == "" ), ]
+
+
+df
+```
+
+#문제 3. country가 ‘Korea’인 행만 남긴 다음, country 열을 제거하세요.
+
+```{r}
+df<-df[df$country=='Korea',]
+df
+```
+
+```{r}
+df<-subset(df,select=-country)
+df
+```
+#4. province 변수 내 ‘서울, 부산, 대구, 인천, 대전, 세종, 울산, 제주도’ 값을 다음과 같이 바꾸세요.
+
+```{r}
+df2<-df
+df2
+```
+
+```{r}
+
+df2$province<-revalue(df2$province, c("서울"= "서울특별시","부산"="부산광역시","대구"="대구광역시",
+                                      "인천"="인천광역시","대전"="대전광역시","세종"="세종특별자치시","울산"="울산광역시",
+                                      "제주도"="제주특별자치도"))
+
+
+```
+#문제 5. confirmed_date를 날짜 자료형(Date)으로 바꾸세요.
+
+```{r}
+df2$confirmed_date<-as.Date(df2$confirmed_date)
+
+```
+
+```{r}
+str(df2)
+df2
+```
+#문제 6. 확진날짜(confirmed_date) 별 확진자 수에 대한 파생변수를 만드세요. (파생변수 이름 : confirmed_number)
+
+
+```{r}
+#count(df2, vars = confirmed_date)
+con<-df2 %>% group_by(confirmed_date) %>% summarise(n = n())
+con
+
+
+df2<-merge(df2, con, by="confirmed_date")
+
+
+
+```
+
+```{r}
+colnames(df2)[8]<-"confirmed_number"
+df2
+
+
+
+```
+
+```{r}
+#confirmed_number<-df2
+#confirmed_number %>%
+#  group_by(confirmed_date) %>%
+#  summarise(count = n()) 
+#confirmed_number'''
+```
+
+#문제 7. 확진날짜(confirmed_date)의 주말 여부에 대한 파생변수를 만드세요. (파생변수 이름 : wday)
+
+```{r}
+w_day<-df2
+w_day$week<-wday((w_day$confirmed_date))
+w_day
+
+```
+
+```{r}
+#w_day<-df3
+#w_day
+
+
+```
+
+```{r}
+w_day$week<-ifelse((w_day$week == 1) | (w_day$week==7), '주말','주중')
+w_day
+```
+```{r}
+colnames(w_day)[9]<-"wday"
+w_day
+```
+
+```{r}
+df4<-w_day
+df4
+```
+
+```{r}
+df$province<-revalue(df$province, c("서울"= "서울특별시","부산"="부산광역시","대구"="대구광역시",
+                                      "인천"="인천광역시","대전"="대전광역시","세종"="세종특별자치시","울산"="울산광역시",
+                                      "제주도"="제주특별자치도"))
+df$confirmed_date<-as.Date(df$confirmed_date)
+df
+
+```
+
+#문제 8. 나이대 별 일별 확진자 수에 대한 summary를 확인해 보세요. (예 : 10대의 날짜별 확진자 수의 분포)
+
+
+```{r}
+Age_summary<-df%>%group_by(age,confirmed_date)%>%summarize(number=n())
+tapply(Age_summary$number,Age_summary$age,summary)
+```
+
+
+
+
+
+```{r}
+str(df)
+
+```
+
+```{r}
+maxpoint<-df4[which.max(df4$confirmed_number),"confirmed_date"]
+maxpoint
+
+```
+
+```{r}
+str(maxpoint)
+
+```
+
+
+```{r}
+#ggplot(data = df4, aes(x = confirmed_date, y = confirmed_number)) +
+#    theme_bw() +
+#    theme(panel.grid.major.x = element_blank(), 
+#       panel.grid.minor.x = element_blank(),
+#       panel.grid.major.y = element_blank(),
+#       panel.grid.minor.y = element_blank())+
+#    ggtitle("코로나 확진자수 추이\n-국내인 기준") +
+#    theme(plot.title = element_text(family = "serif", face = "bold", hjust = 0.5, size = 15))+
+#  geom_line(color = 'lightblue')+geom_point(aes( x=confirmed_date[which.max(confirmed_number)],y=max(confirmed_number)), #col="navy")
+
+
+
+```
+
+
+
+#문제 1 Line Plot. confirmed_date와 confirmed_number 변수를 이용하여 확진자수 추이 그래프를 그리고, 최대 확진자에 대한 정보도 표시하세요. 
+```{r}
+ggplot(data = df4, aes(x = confirmed_date, y = confirmed_number)) +
+    theme_bw() +
+    theme(panel.grid.major.x = element_blank(), 
+       panel.grid.minor.x = element_blank(),
+       panel.grid.major.y = element_blank(),
+       panel.grid.minor.y = element_blank())+
+    ggtitle("코로나 확진자수 추이\n-국내인 기준") +
+    theme(plot.title = element_text(family = "serif", face = "bold", hjust = 0.5, size = 15))+
+  geom_line(color = 'lightblue')+geom_text(x=as.Date("2020-02-05"),y=145,label='2020-03-05(145명)',color='navy')+ geom_point(mapping =aes(x = as.Date('2020-03-05'), y =145), color="navy");
+```
+
+
+#문제 1-2 Line Plot. province 별 확진자 수 추이 그래프를 그리세요
+```{r}
+ ggplot(data = df4, aes(x = confirmed_date, y = confirmed_number, color = province, group = province)) +
+     geom_line() +
+     facet_wrap(~ province)
+
+```
+```{r}
+temp<-df2
+temp
+```
+
+#문제 2 Bar Plot. 지역별 확진자 수를 state(확진자 상황) 그룹 별로 나누어 그래프를 그리세요. 
+```{r}
+by_province<-aggregate(confirmed_number~ province+state, temp, sum)
+by_province
+
+```
+
+
+
+```{r}
+p<-ggplot(data=by_province) +aes(x=reorder(province,confirmed_number), y=confirmed_number, label=confirmed_number,fill=state)+
+  geom_bar(position="stack", stat="identity")+labs(x="지역", y="확진자 수")+coord_flip()
+p
+```
+
+
+#문제 3 Box Plot. 나이대별 일별 확진자 수 box plot을 그리세요
+```{r}
+temp<-df2
+temp
+```
+
+```{r}
+#by_age<-count(temp, vars = "age")
+
+#df2<-merge(df2, confirmed_number, by='confirmed_date')
+
+```
+
+
+
+```{r}
+#temp %>% group_by(province, State) %>% summarise(total = sum(confirmed_number))
+
+by_age<-df2%>%
+    group_by(age, confirmed_date)%>%
+    summarise(
+    count=n()) 
+by_age
+```
+
+```{r}
+ggplot(by_age, aes(x = age, y = count, fill = age)) +    # Create boxplot chart in ggplot2
+  labs(x="age", y="일단위 확진자 수")+geom_boxplot(outlier.shape = NA,alpha=125)+
+  stat_boxplot(geom="errorbar")
+
+#에러바와 색상의 문제
+```
+#문제 3-2 . 나이대별 일별 확진자 수에 대한 일원분산분석(one-way ANOVA)을 실시하여 해석해 보세요
+```{r}
+aov(count ~ age, data = by_age)
+
+
+```
+
+
+```{r}
+summary(aov(count ~ age, data = by_age))
+
+
+```
+
+일원분산분석(one-way ANOVA) 결과 검정통계량 F-value가 8.823으로 나왔으며, P-value 값은 '8.19e-14'으로서 매우 작게 나와 유의수준 10% 에서 귀무가설을 기각하고 대립가설을 채택하게 되어 집단간 평균의 차이가 있다고 해석됩니다.
+
+```{r}
+install.packages("corrplot")
+library(corrplot)
+install.packages("caret")
+library(caret)
+install.packages("MLmetrics")
+library(MLmetrics)
+install.packages("MASS")
+library(MASS)
+install.packages("corrplot")
+library(corrplot)
+install.packages("tidyverse")
+library(tidyverse)
+
+
+```
+
+```{r}
+Boston
+
+```
+
+```{r}
+
+
+#Create Correlation Matrix
+corr_matrix <- cor(Boston)
+
+
+
+#Creating Figure with Numbers
+corrplot(corr_matrix,
+         method = 'number',
+         type = "upper")
+
+
+```
+
+'''
+accessibility to radial highway and tax are very highly positive correlative.
+lower status of the population and median value of owner occupied homes are highly negatively correlative.
+'''
+
+
+
+#문제 2. 아래와 같이 종속변수로 사용할 medv와 이외 변수 간의 관계 파악을 위한 scatterplot 및 회귀 추세선
+```{r}
+Boston %>%
+  gather(-medv, key = "var", value = "value") %>%
+  ggplot(aes(x = value, y = medv)) +
+    geom_point() +
+    stat_smooth(method = 'lm', color='lightblue')+
+    ggtitle('Sccatter plot of dependent variables vs Median Value(medv)')+
+    facet_wrap(~ var, scales = "free") +
+    theme_bw()
+
+```
+
+#문제 3. 데이터를 train/test 데이터를 7:3으로 나누세요 (1234로 시드 고정 필수)
+```{r}
+#set.seed(1234) 
+
+#train_idx <- sample(1:nrow(Boston), size=0.7*nrow(Boston), replace=F) # train-set 0.7, test-set 0.3
+
+#test_idx <- (-train_idx)
+
+
+
+#X_train <- Boston[train_idx,]
+
+#X_test <- Boston[test_idx,]
+
+
+```
+```{r}
+set.seed(1234)
+train_idx=createDataPartition(Boston$medv, p=0.7, times=1, list=FALSE)
+X_train=Boston[train_idx,]
+X_test=Boston[-train_idx,]
+print(paste0('X_train: ', nrow(X_train)))
+
+print(paste0('X_test: ', nrow(X_test)))
+```
+
+
+#문제 3-2. train 데이터로 medv를 종속변수로 하고 나머지를 모두 독립 변수로 하는 회귀 모형을 만든 후 간단히 결과를 해석한 후, test에 대한 RMSE를 구하세요
+```{r}
+mod1 <- lm(medv ~ crim+ zn +indus+chas+nox+rm+age+dis+rad+tax+ptratio+black+lstat, data=X_train)
+summary(mod1)
+```
+
+
+#medv를 설명하는데 nox,dis,rad,ptratio,lstat이 중요한 변수이다.
+#p-value가 2.2e-16으로, 0.05보다 작은 수이므로, 이 모델은 통계적으로 유의하다.
+#수정 R^2값이 0.7249정도로 크므로, 모형이 데이터를 잘 적합시킨다고 볼 수 있다. 
+
+
+
+```{r}
+predictions <- predict(mod1, X_test)
+#predictions
+#rmse(X_test$medv, predictions)
+sqrt(mean((X_test$medv - predictions)^2))
+```
+
+#RMSE:4.423034
+
+#문제 3-3. 모델의 RMSE를 낮출 수 있는 방법에 대해 간략히 설명해 주세요
+
+```{r}
+#이상치제거, 데이터 왜도 감소 
+
+```
+
+```{r}
+
+linear_coef<-summary(mod1)$coefficients
+linear_coef<-as.data.frame(linear_coef)
+linear_coef
+```
+
+#문제 4. 적합한 회귀모형의 계수에 대해 아래와 같이 시각화 해주세요 (색 : red, yellow, blue
+```{r}
+
+linear_coef<-summary(mod1)$coefficients
+linear_coef<-as.data.frame(linear_coef)
+meaning<-c('(intercept)','crim','zn','indus','chas','nox','rm','age','dis','rad','tax','ptratio','black','lstat')
+linear_coef$meaning<-meaning
+linear_coef%>% ggplot(aes(x=reorder(meaning,Estimate),y=Estimate,fill=meaning))+
+  geom_bar(stat='identity',alpha=0.5)+coord_flip()+
+  xlab('intercept and variables')+
+  ylab('value')+
+  geom_text(x='(intercept)',y=20,label='39.14')+
+  geom_text(x='crim',y=0,label='-0.13')+
+  geom_text(x='zn',y=0,label='0.05')+
+  geom_text(x='indus',y=0,label='0')+
+  geom_text(x='chas',y=0,label='2.94')+
+  geom_text(x='nox',y=-8,label='-17.62')+
+  geom_text(x='rm',y=0,label='3.44')+
+  geom_text(x='age',y=0,label='0.02')+
+  geom_text(x='dis',y=0,label='-1.48')+
+  geom_text(x='rad',y=0,label='0.4')+
+  geom_text(x='tax',y=0,label='-0.01')+
+  geom_text(x='ptratio',y=0,label='-0.97')+
+  geom_text(x='black',y=0,label='0.01')+
+  geom_text(x='lstat',y=0,label='-0.59')+ 
+  scale_fill_manual(values = c( 'red', 'yellow','yellow','yellow','yellow','yellow','yellow','yellow','blue','yellow','yellow','yellow','yellow','yellow'))+ 
+  theme(legend.title = element_blank()) + 
+  theme(legend.position = 'none') 
+
+```
+
+
+
+
+
+
+
+
+
